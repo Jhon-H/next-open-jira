@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useReducer } from "react"
-import { v4 as uuidv4 } from 'uuid'
+import { useSnackbar } from 'notistack';
 import { entriesApi } from "../../apis";
 
 import { Entry } from "../../interfaces";
@@ -14,6 +14,7 @@ const ENTRIES_INITIAL_STATE: EntriesState = {
 }
 
 export const EntriesProvider = ({ children }: { children: ReactNode}) => {
+  const { enqueueSnackbar } = useSnackbar();
   const [state, dispatch] = useReducer(entriesReducer, ENTRIES_INITIAL_STATE)
 
   const addNewEntry = async (description: string) => {
@@ -24,14 +25,46 @@ export const EntriesProvider = ({ children }: { children: ReactNode}) => {
     dispatch({ type: '[Entry] Add-Entry', payload: data })
   }
 
-  const updateEntry = async ({ _id, description, status }: Entry) => {
+  const updateEntry = async ({ _id, description, status }: Entry, showSnackbar = false) => {
     try {
       const { data } = await entriesApi.put<Entry>(`/entries/${_id}`, {
         description,
         status
       })
 
+      if (showSnackbar) {
+        enqueueSnackbar('Entrada actualizada', {
+          variant: 'success',
+          autoHideDuration: 1500,
+          anchorOrigin: {
+            vertical: 'top',
+            horizontal: 'right'
+          }
+        })
+      }
+
       dispatch({ type: '[Entry] update-Entry', payload: data })
+    } catch(error) {
+      console.log({ error })
+    }
+  }
+
+  const deleteEntry = async (_id: string, showSnackbar = false) => {
+    try {
+      const { data } = await entriesApi.delete<{ id: string, message: string }>(`/entries/${_id}`)
+
+      if (showSnackbar) {
+        enqueueSnackbar('Entrada eliminada', {
+          variant: 'success',
+          autoHideDuration: 1500,
+          anchorOrigin: {
+            vertical: 'top',
+            horizontal: 'right'
+          }
+        })
+      }
+
+      dispatch({ type: '[Entry] delete-data', payload: data.id })
     } catch(error) {
       console.log({ error })
     }
@@ -50,7 +83,8 @@ export const EntriesProvider = ({ children }: { children: ReactNode}) => {
     <EntriesContext.Provider value={{
       ...state,
       addNewEntry,
-      updateEntry
+      updateEntry,
+      deleteEntry
     }}>
       {children}
     </EntriesContext.Provider>

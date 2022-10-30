@@ -5,6 +5,7 @@ import { Entry, IEntry } from '../../../models'
 
 type Data =
   | { message: string }
+  | { message: string, id: string }
   | IEntry
 
 
@@ -20,8 +21,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse<Data>)
     case 'GET':
       return getEntry(req, res)
 
-      case 'PUT':
+    case 'PUT':
       return updateEntry(req, res)
+    
+    case 'DELETE':
+      return deleteEntry(req, res)
 
     default:
       return res.status(400).json({ message: 'metodo no existe' })
@@ -75,4 +79,28 @@ const updateEntry = async(req: NextApiRequest, res: NextApiResponse<Data>) => {
     await db.disconnect()
   }
 
+}
+
+const deleteEntry = async(req: NextApiRequest, res: NextApiResponse<Data>) => {
+  const { id } = req.query
+
+  await db.connect()
+
+  const entryToUpdate = await Entry.findById(id)
+
+  if (!entryToUpdate) {
+    await db.disconnect()
+    return res.status(400).json({ message: 'No hay entrada con ese id' })
+  }
+
+  try {
+    await Entry.findByIdAndDelete(id)
+    res.status(200).json({ message: 'Entrada eliminado', id: id as string })
+
+  } catch(error: any)  {
+    res.status(400).json({ message: error.errors.status.message })
+
+  } finally {
+    await db.disconnect()
+  }
 }

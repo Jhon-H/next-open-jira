@@ -18,6 +18,12 @@ mongodb://localhost:27017/entriesdb
 
 Renombrar el archivo __.env.template__ a __.env__
 
+## Reconstruir los módulos de node
+
+```bash
+yarn add
+```
+
 ## Llenar la base de datos con informaciópn de pruebas
 
 ```http
